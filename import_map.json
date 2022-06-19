@@ -1,0 +1,15 @@
+{
+  "imports": {
+    "https://deno.land/x/ip_num@v1.4.0/BinaryUtils": "https://deno.land/x/ip_num@v1.4.0/BinaryUtils.ts",
+    "https://deno.land/x/ip_num@v1.4.0/Hexadecatet": "https://deno.land/x/ip_num@v1.4.0/Hexadecatet.ts",
+    "https://deno.land/x/ip_num@v1.4.0/HexadecimalUtils": "https://deno.land/x/ip_num@v1.4.0/HexadecimalUtils.ts",
+    "https://deno.land/x/ip_num@v1.4.0/IPNumber": "https://deno.land/x/ip_num@v1.4.0/IPNumber.ts",
+    "https://deno.land/x/ip_num@v1.4.0/IPNumType": "https://deno.land/x/ip_num@v1.4.0/IPNumType.ts",
+    "https://deno.land/x/ip_num@v1.4.0/IPPool": "https://deno.land/x/ip_num@v1.4.0/IPPool.ts",
+    "https://deno.land/x/ip_num@v1.4.0/IPRange": "https://deno.land/x/ip_num@v1.4.0/IPRange.ts",
+    "https://deno.land/x/ip_num@v1.4.0/IPv6Utils": "https://deno.land/x/ip_num@v1.4.0/IPv6Utils.ts",
+    "https://deno.land/x/ip_num@v1.4.0/Octet": "https://deno.land/x/ip_num@v1.4.0/Octet.ts",
+    "https://deno.land/x/ip_num@v1.4.0/Prefix": "https://deno.land/x/ip_num@v1.4.0/Prefix.ts",
+    "https://deno.land/x/ip_num@v1.4.0/Validator": "https://deno.land/x/ip_num@v1.4.0/Validator.ts"
+  }
+}
