@@ -38,7 +38,7 @@ const lambdaAdaptor: FrameworkAdapter = (
 });
 const callback = webhookCallback(bot, lambdaAdaptor);
 
-export async function handler(
+export async function webhook(
   event: APIGatewayProxyEventV2,
   context: Context,
 ): Promise<APIGatewayProxyResultV2> {
