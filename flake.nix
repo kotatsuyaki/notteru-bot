@@ -10,11 +10,11 @@
         pkgs = import nixpkgs { inherit system; };
       in
       {
-        devShell = with pkgs; mkShell {
-          buildInputs = [
+        devShell = pkgs.mkShell {
+          buildInputs = with pkgs; [
             deno
+            nodejs
             rnix-lsp
-            yarn
           ];
         };
       });

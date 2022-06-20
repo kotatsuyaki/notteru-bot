@@ -1,8 +1,4 @@
 {
-  "name": "notteru-bot",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
   "devDependencies": {
     "serverless": "^3.19.0",
     "serverless-scriptable-plugin": "^1.2.2"
