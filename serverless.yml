@@ -1,0 +1,47 @@
+service: notteru-bot-service
+frameworkVersion: '3'
+configValidationMode: error
+useDotenv: true
+deprecationNotificationMode: warn:summary
+
+provider:
+  name: aws
+  region: us-east-1
+  runtime: provided.al2
+  environment:
+    DENO_IMPORTMAP: import_map.json
+    # BOT_TOKEN and CHANNEL_ID to be set in .env
+    BOT_TOKEN: ${env:BOT_TOKEN}
+    CHANNEL_ID: ${env:CHANNEL_ID}
+
+package:
+  patterns:
+    - '!**/*'
+    - 'src/**'
+    - 'import_map.json'
+
+functions:
+  index:
+    handler: src/index.webhook
+    description: Handle Telegram Bot API webhook update
+    memorySize: 128
+    url: true
+    layers:
+      - !GetAtt Deno.Outputs.LayerArn
+
+resources:
+  Transform: AWS::Serverless-2016-10-31
+  Resources:
+    Deno:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location:
+          ApplicationId: arn:aws:serverlessrepo:us-east-1:390065572566:applications/deno
+          SemanticVersion: 1.23.0
+
+plugins:
+  - serverless-scriptable-plugin
+
+custom:
+  scriptHooks:
+    before:package:createDeploymentArtifacts: DENO_DIR=.deno_dir deno cache src/index.ts --importmap import_map.json && cp -R .deno_dir/gen/file/$PWD/ .deno_dir/LAMBDA_TASK_ROOT
