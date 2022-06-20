@@ -16,6 +16,9 @@
             nodejs
             rnix-lsp
           ];
+          shellHook = ''
+            export PATH=$PWD/node_modules/.bin:$PATH
+          '';
         };
       });
 }
