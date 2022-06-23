@@ -3,29 +3,56 @@ import {
   APIGatewayProxyResultV2,
   Context,
 } from "https://deno.land/x/lambda@1.22.3/mod.ts";
-import {
-  Bot,
-  FrameworkAdapter,
-  webhookCallback,
-} from "https://deno.land/x/grammy@v1.8.3/mod.ts";
+import { FrameworkAdapter } from "https://deno.land/x/grammy@v1.8.3/mod.ts";
 import {
   IPv4,
   IPv4CidrRange,
   IPv4Prefix,
 } from "https://deno.land/x/ip_num@v1.4.0/index.ts";
+import {
+  assert,
+  assertExists,
+} from "https://deno.land/std@0.144.0/testing/asserts.ts";
+import { DynamoDB } from "https://esm.sh/@aws-sdk/client-dynamodb@3.113.0";
+import { DynamoDBDocument } from "https://esm.sh/@aws-sdk/lib-dynamodb@3.113.0";
+import { Bot } from "https://deno.land/x/grammy@v1.8.3/mod.ts";
+import { NotteruBot } from "./bot.ts";
 
 console.log("Initializing bot");
 
-// const channel_id = Deno.env.get("CHANNEL_ID")!;
-const bot_token = Deno.env.get("BOT_TOKEN")!;
-const lambda_version = Deno.env.get("AWS_LAMBDA_FUNCTION_VERSION");
-const bot = new Bot(bot_token);
+const bot_token = Deno.env.get("BOT_TOKEN");
+const admin_id = Number(Deno.env.get("ADMIN_ID"));
+const channel_id = Number(Deno.env.get("CHANNEL_ID"));
 
-bot.command("ping", async (ctx) => {
-  await ctx.reply(`pong from lambda version ${lambda_version}`, {
-    reply_to_message_id: ctx.msg.message_id,
-  });
+assertExists(bot_token);
+assert(isNaN(admin_id) == false);
+assert(isNaN(channel_id) == false);
+
+console.log("Got parameters from environment");
+
+const client = new DynamoDB({
+  region: "us-east-1",
+  credentials: {
+    secretAccessKey: Deno.env.get("AWS_SECRET_ACCESS_KEY")!,
+    accessKeyId: Deno.env.get("AWS_ACCESS_KEY_ID")!,
+    sessionToken: Deno.env.get("AWS_SESSION_TOKEN")!,
+  },
 });
+
+console.log("Created client");
+
+const doc_client = DynamoDBDocument.from(client);
+
+console.log("Created doc_client");
+
+const bot = new NotteruBot(
+  new Bot(bot_token),
+  doc_client,
+  admin_id,
+  channel_id,
+);
+
+console.log("Created bot");
 
 const lambdaAdaptor: FrameworkAdapter = (
   event: APIGatewayProxyEventV2,
@@ -36,7 +63,9 @@ const lambdaAdaptor: FrameworkAdapter = (
   end: () => callback(null, { statusCode: 200 }),
   respond: (json: string) => callback(null, { statusCode: 200, body: json }),
 });
-const callback = webhookCallback(bot, lambdaAdaptor);
+const callback = bot.webhook_callback(lambdaAdaptor);
+
+console.log("Webhook callback is set");
 
 export async function webhook(
   event: APIGatewayProxyEventV2,
@@ -61,6 +90,16 @@ export async function webhook(
     console.warn("Error during bot callback", e);
     return internal_error();
   }
+}
+
+export async function periodic(
+  _event: APIGatewayProxyEventV2,
+  _context: Context,
+): Promise<APIGatewayProxyResultV2> {
+  await bot.periodic();
+  return {
+    statusCode: 200,
+  };
 }
 
 function is_ip_valid(ip: IPv4) {

@@ -10,22 +10,50 @@ provider:
   runtime: provided.al2
   environment:
     DENO_IMPORTMAP: import_map.json
+    HANDLER_EXT: js
     # BOT_TOKEN and CHANNEL_ID to be set in .env
     BOT_TOKEN: ${env:BOT_TOKEN}
     CHANNEL_ID: ${env:CHANNEL_ID}
+    ADMIN_ID: ${env:ADMIN_ID}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource:
+            - Fn::GetAtt: [queriesTable, Arn]
 
 package:
   patterns:
     - '!**/*'
-    - 'src/**'
+    - 'bundle.js'
+    # - 'src/bot.ts'
+    # - 'src/lambda.ts'
     - 'import_map.json'
+    # - '.deno_dir/**'
+    # - '!.deno_dir/gen/file/**'
 
 functions:
-  index:
-    handler: src/index.webhook
+  webhook:
+    handler: bundle.webhook
     description: Handle Telegram Bot API webhook update
-    memorySize: 128
+    memorySize: 256
     url: true
+    timeout: 15
+    layers:
+      - !GetAtt Deno.Outputs.LayerArn
+
+  periodic:
+    handler: bundle.periodic
+    description: Crawl for query updates
+    memorySize: 512
+    timeout: 20
+    events:
+      - schedule: cron(0 * * * ? *)
     layers:
       - !GetAtt Deno.Outputs.LayerArn
 
@@ -39,9 +67,22 @@ resources:
           ApplicationId: arn:aws:serverlessrepo:us-east-1:390065572566:applications/deno
           SemanticVersion: 1.23.0
 
+    queriesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: queries
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: name
+            AttributeType: S
+        KeySchema:
+          - AttributeName: name
+            KeyType: HASH
+
 plugins:
   - serverless-scriptable-plugin
 
 custom:
   scriptHooks:
-    before:package:createDeploymentArtifacts: DENO_DIR=.deno_dir deno cache src/index.ts --importmap import_map.json && cp -R .deno_dir/gen/file/$PWD/ .deno_dir/LAMBDA_TASK_ROOT
+    before:package:createDeploymentArtifacts: deno bundle --importmap import_map.json src/lambda.ts -- bundle.js
+    # before:package:createDeploymentArtifacts: DENO_DIR=.deno_dir deno cache src/lambda.ts src/bot.ts --importmap import_map.json && cp -R .deno_dir/gen/file/$PWD/ .deno_dir/LAMBDA_TASK_ROOT
